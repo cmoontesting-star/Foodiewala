@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import connectDB from "@/utils/db";
+import connectDB from "@/app/utils/config/db";
 
-import Notification from "@/models/Notification";
+import Notification from "@/app/utils/models/Notification";
 
 /* GET NOTIFICATIONS */
 export async function GET() {

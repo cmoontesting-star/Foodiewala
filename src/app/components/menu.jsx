@@ -25,10 +25,6 @@ export default function Menu() {
 
     return (
         <section className="w-full max-w-6xl px-4 py-8">
-            <div className="mb-5 mt-[-12]">
-                <SearchBar />
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50">
                 {product.map((item) => (
                     <div
