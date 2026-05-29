@@ -37,7 +37,7 @@ export default function ProductsPage() {
     async function fetchCategories() {
         const res = await fetch("/api/categories")
         const data = await res.json()
-        setCategories(data.categories)
+        setCategories(data.categories || [])
     }
 
     useEffect(() => {
