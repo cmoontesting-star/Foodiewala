@@ -2,20 +2,33 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import AddToCartButton from "./AddToCartButton";
+import SearchBar from "./searchbar";
 
 export default function Menu() {
 
     const [product, setProduct] = useState([])
+    const searchParams = useSearchParams();
+    const searchQuery = searchParams.get("search") || "";
 
     useEffect(() => {
-        fetch('/api/products')
+        const url = searchQuery
+            ? `/api/products/search?query=${encodeURIComponent(searchQuery)}`
+            : "/api/products";
+
+        fetch(url)
             .then(res => res.json())
             .then(data => setProduct(data.products || []))
-    }, [])
+            .catch(err => console.error("Error fetching products:", err));
+    }, [searchQuery]);
 
     return (
         <section className="w-full max-w-6xl px-4 py-8">
+            <div className="mb-5 mt-[-12]">
+                <SearchBar />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50">
                 {product.map((item) => (
                     <div

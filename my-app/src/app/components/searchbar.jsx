@@ -1,7 +1,10 @@
-import { Search } from "lucide-react";
+"use client";
 
 
-export default function SearchBar() {
+import { useState } from "react";
+
+
+export default function SearchBar({ search, handleSearch }) {
     return (
         <div className="flex justify-center items-center gap-2">
 
@@ -9,7 +12,7 @@ export default function SearchBar() {
             <div className="flex justify-center items-center gap-2">
 
 
-                <input className=" cursor-pointer  border border-gray-300 rounded-2xl px-6 py-3 w-80" type="text" placeholder="SearchHere....">
+                <input className=" cursor-pointer  border border-gray-300 rounded-2xl px-6 py-3 w-80" type="text" placeholder="SearchHere...." value={search} onChange={handleSearch}>
 
                 </input>
 

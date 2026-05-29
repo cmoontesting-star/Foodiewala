@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./components/sectionProviders/providers";
+import { Toaster } from "react-hot-toast";
+import Script from "next/script";
 import "./globals.css";
 
 
@@ -31,6 +33,8 @@ export default function RootLayout({ children }) {
         <Providers>
           <main className="max-w-[1200px] mx-auto p-4">
             {children}
+            <Toaster />
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
           </main>
         </Providers>
       </body>

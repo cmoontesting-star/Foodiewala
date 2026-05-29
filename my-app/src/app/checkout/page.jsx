@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/app/components/navbar";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 import { ArrowLeft, ShoppingBag, Truck, MapPin, User, Phone, ClipboardCheck, Loader2 } from "lucide-react";
 
 export default function CartCheckoutPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [placingOrder, setPlacingOrder] = useState(false);
@@ -15,6 +20,19 @@ export default function CartCheckoutPage() {
         phone: "",
         address: "",
     });
+
+    // Enforce login restriction and pre-fill name
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            toast.error("Please login or register to checkout.");
+            router.push("/login?callbackUrl=" + window.location.pathname);
+        } else if (status === "authenticated" && session?.user) {
+            setFormData(prev => ({
+                ...prev,
+                customerName: prev.customerName || session.user.name || session.user.email || ""
+            }));
+        }
+    }, [status, session, router]);
 
     // FETCH CART ITEMS
     useEffect(() => {
@@ -57,54 +75,110 @@ export default function CartCheckoutPage() {
     const placeOrder = async (e) => {
         e.preventDefault();
         
+        if (status !== "authenticated") {
+            toast.error("Please login or register to place your order.");
+            router.push("/login?callbackUrl=" + window.location.pathname);
+            return;
+        }
+
         if (!formData.customerName.trim() || !formData.phone.trim() || !formData.address.trim()) {
-            alert("Please fill in all the shipping details.");
+            toast.error("Please fill in all the shipping details.");
             return;
         }
 
         setPlacingOrder(true);
 
         try {
-            // Loop through each cart item and place an order
-            const orderPromises = cartItems.map(item => 
-                fetch("/api/orders", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        productId: item.productId,
-                        name: item.name,
-                        category: item.category,
-                        image: item.image,
-                        price: item.price,
-                        quantity: item.quantity,
+            // CREATE RAZORPAY ORDER
+            const res = await fetch("/api/payment", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    amount: finalTotal,
+                }),
+            });
 
-                        customerName: formData.customerName,
-                        phone: formData.phone,
-                        address: formData.address,
-                    }),
-                })
-            );
+            const paymentData = await res.json();
 
-            const responses = await Promise.all(orderPromises);
-            const dataResults = await Promise.all(responses.map(res => res.json()));
-
-            const allSuccessful = dataResults.every(data => data.success);
-
-            if (allSuccessful) {
-                // Clear cart
-                await fetch("/api/cart", {
-                    method: "DELETE",
-                });
-                alert("Order Placed Successfully!");
-                window.location.href = "/"; // redirect to home
-            } else {
-                alert("Failed to place one or more orders. Please try again.");
+            if (!paymentData.success) {
+                toast.error(paymentData.message || "Failed to create payment order.");
+                setPlacingOrder(false);
+                return;
             }
+
+            // OPEN RAZORPAY
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: paymentData.order.amount,
+                currency: "INR",
+                name: "FoodieWala",
+                description: "Food Cart Payment",
+                order_id: paymentData.order.id,
+                handler: async function (response) {
+                    toast.success("Payment Successful");
+
+                    try {
+                        // Loop through each cart item and place an order
+                        const orderPromises = cartItems.map(item => 
+                            fetch("/api/orders", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                    productId: item.productId,
+                                    name: item.name,
+                                    category: item.category,
+                                    image: item.image,
+                                    price: item.price,
+                                    quantity: item.quantity,
+                                    customerName: formData.customerName,
+                                    phone: formData.phone,
+                                    address: formData.address,
+                                    paymentMethod: "Razorpay",
+                                    paymentStatus: "Paid",
+                                    orderStatus: "Confirmed",
+                                }),
+                            })
+                        );
+
+                        const responses = await Promise.all(orderPromises);
+                        const dataResults = await Promise.all(responses.map(res => res.json()));
+
+                        const allSuccessful = dataResults.every(data => data.success);
+
+                        if (allSuccessful) {
+                            // Clear cart
+                            await fetch("/api/cart", {
+                                method: "DELETE",
+                            });
+                            toast.success("Order Placed Successfully!");
+                            router.push("/my-orders");
+                        } else {
+                            toast.error("Failed to place one or more orders. Please check your order history.");
+                        }
+                    } catch (err) {
+                        console.error("Error saving orders:", err);
+                        toast.error("Failed to save order details. Please contact support.");
+                    }
+                },
+                prefill: {
+                    name: formData.customerName,
+                    contact: formData.phone,
+                    email: session?.user?.email,
+                },
+                theme: {
+                    color: "#f97316",
+                },
+            };
+
+            const razorpay = new window.Razorpay(options);
+            razorpay.open();
         } catch (error) {
-            console.error("Error placing order:", error);
-            alert("Error placing order. Please try again.");
+            console.error("Error initiating payment:", error);
+            toast.error("Payment failed. Please try again.");
         } finally {
             setPlacingOrder(false);
         }

@@ -1,8 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
 import MenuItem from "../components/menu";
-
-
 
 export default function MenuPage() {
     return (
@@ -13,7 +12,9 @@ export default function MenuPage() {
                 <h1 className="text-5xl font-bold text-center">Our Delicious Food Menu </h1>
                 <h1 className="text-5xl font-bold text-center">Only <span className="text-orange-500">Biryanies</span> will Avialble Here </h1>
             </div>
-            <MenuItem />
+            <Suspense fallback={<div className="text-center py-10 font-semibold text-gray-500">Loading Menu...</div>}>
+                <MenuItem />
+            </Suspense>
 
         </div>
     )
