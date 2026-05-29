@@ -68,8 +68,8 @@ export default function Navbar() {
             <div className="text-gray-600 text-xl flex  items-center gap-4 ">
                 <Link className="text-gray-600 hover:underline font-bold cursor-pointer" href="/">Home</Link>
                 <Link className="text-gray-600  hover:underline font-bold  cursor-pointer " href="/menu">Menu</Link>
-                <Link className="text-gray-600   hover:underline font-bold  cursor-pointer " href="/about">About</Link>
-                <Link className="text-gray-600  hover:underline font-bold  cursor-pointer " href="/contact">Contact</Link>
+                {/* <Link className="text-gray-600   hover:underline font-bold  cursor-pointer " href="/about">About</Link>
+                <Link className="text-gray-600  hover:underline font-bold  cursor-pointer " href="/contact">Contact</Link> */}
                 <Link href="/cart" className="cursor-pointer ml-5" onClick={fetchCartCount}>
 
                     <div className="relative cursor-pointer" >
